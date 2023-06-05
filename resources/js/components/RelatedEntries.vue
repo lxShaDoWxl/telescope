@@ -74,6 +74,9 @@
                 if(window.history.replaceState) {
                     window.history.replaceState(null, null, '#' + this.currentTab);
                 }
+            },
+            hasDuplicated(hash){
+                return _.includes(this.queriesSummary.duplicates,hash)
             }
         },
 
@@ -142,9 +145,11 @@
             },
 
             queriesSummary() {
+                const duplicates =_.groupBy(this.queries, (q) => { return q.content.hash });
                 return {
                     time: _.reduce(this.queries, (time, q) => { return time + parseFloat(q.content.time) }, 0.00).toFixed(2),
-                    duplicated: this.queries.length - _.size(_.groupBy(this.queries, (q) => { return q.content.hash })),
+                    duplicated: this.queries.length - _.size(duplicates),
+                    duplicates: _.keys(_.pickBy(duplicates,(d) => { return d.length > 1}))
                 };
             },
 
@@ -261,14 +266,19 @@
                 <thead>
                 <tr>
                     <th>Query<br/><small>{{ queries.length }} queries, {{ queriesSummary.duplicated }} of which are duplicated.</small></th>
+                    <th>hash</th>
                     <th class="text-right">Duration<br/><small>{{ queriesSummary.time }}ms</small></th>
                     <th></th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr v-for="entry in queries">
-                    <td :title="entry.content.sql"><code>{{truncate(entry.content.sql, 110)}}</code></td>
-
+                <tr v-for="entry in queries" :class="{ 'duplicate-queries': hasDuplicated(entry.content.hash) }">
+                    <td :title="entry.content.sql" ><code>{{truncate(entry.content.sql, 110)}}</code></td>
+                    <td class="table-fit text-right">
+                        <span class="text-muted">
+                            {{entry.content.hash}}
+                        </span>
+                    </td>
                     <td class="table-fit text-right">
                         <span class="badge badge-danger" v-if="entry.content.slow">
                             {{entry.content.time}}ms

@@ -88,6 +88,8 @@ $badge-warning-bg: $amber-500;
 $badge-warning-color: $white;
 $badge-danger-bg: $red-500;
 $badge-danger-color: $white;
+$duplicates-bg: rgba($blue-500, 0.1);
+$duplicates-hover-bg: rgba(darken($duplicates-bg, 2%), 0.2);
 
 $grid-breakpoints: (
     xs: 0,

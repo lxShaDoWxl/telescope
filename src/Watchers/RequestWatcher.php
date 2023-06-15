@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as IlluminateResponse;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -49,7 +50,18 @@ class RequestWatcher extends Watcher
             'uri' => str_replace($event->request->root(), '', $event->request->fullUrl()) ?: '/',
             'method' => $event->request->method(),
             'controller_action' => optional($event->request->route())->getActionName(),
-            'middleware' => array_values(optional($event->request->route())->gatherMiddleware() ?? []),
+//            'middleware' => array_values(optional($event->request->route())->gatherMiddleware() ?? []),
+             'middleware' => (static function (RequestHandled $event) {
+                 if ($route = $event->request->route()) {
+                     try {
+                         return array_values(resolve(Router::class)->gatherRouteMiddleware($route));
+                     } catch (\Throwable $e) {
+                         report($e);
+                         return array_values($route->gatherMiddleware());
+                     }
+                 }
+                 return [];
+             })($event),
             'headers' => $this->headers($event->request->headers->all()),
             'payload' => $this->payload($this->input($event->request)),
             'session' => $this->payload($this->sessionVariables($event->request)),
